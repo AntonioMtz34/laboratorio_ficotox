@@ -1,14 +1,15 @@
 const { Schema, model } = require('mongoose');
 const noteSchema = new Schema({
-    title: String,
-    content: {
+    motivo: {
         type: String,
         required: true
     },
-    author: String,
-   date: {
+    descripcion : String,
+    cliente : String,
+    responsable: String,
+   fechaAgenda: {
         type: Date,
-        default: Date.now
+        required: true
     }
 }, {
     timestamps: true

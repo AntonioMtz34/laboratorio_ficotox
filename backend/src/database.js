@@ -1,11 +1,15 @@
 const mongoose = require('mongoose');
-const URI = process.env.MONGODB_URI
-    ? process.env.MONGODB_URI
-    : 'mongodb://localhost/databasetest';
-mongoose.connect(URI,{
-   // useUnifiedTopology:true
-});
-const connection = mongoose.connection;
-connection.once('open', () => {
-    console.log('DB is connected');
-});
+
+// Utiliza la variable de entorno MONGODB_URI o la URI predeterminada
+const URI = process.env.MONGODB_URI || 'mongodb://localhost/ficotox';
+
+// Conectar a la base de datos
+mongoose.connect(URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log('DB is connected'))
+.catch((error) => console.error('DB connection error:', error));
+
+module.exports = mongoose; // Exporta mongoose para su uso en otros archivos
+

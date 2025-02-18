@@ -5,36 +5,27 @@ notesCtrl.getNotes = async (req, res) => {
     res.json(notes);
 };
 notesCtrl.createNote = async (req, res) => {
-    const { title, content, date, author } = req.body;
+    const { motivo, descripcion, cliente, fechaAgenda, responsable } = req.body;
     try {
-        // Verificar si la nota ya existe en la base de datos
-        const existingNote = await Note.findOne({ title, author });
-
-        // Si la nota ya existe, devolver un error
+        // Verificar si la nota ya existe
+        const existingNote = await Note.findOne({ fechaAgenda, cliente });
         if (existingNote) {
             return res.json({ message: 'La nota ya existe' });
         }
-        if (!title || title.trim() === '') {
-            console.log('No tiene titulo');
-            return res.json({ message: 'El titulo no puede estar vacío' });
-        }
-        if (!content|| content.trim() === '') {
-            console.log('No tiene contenido');
-            return res.json({ message: 'La nota no puede estar vacía' });
-        }
-        const newNote = new Note({
-            title: title,
-            content: content,
-            date: date.now,
-            author: author
-        });
-        console.log(newNote);
-        await newNote.save();
-        res.json({message: 'Note Saved'});
 
-        } catch (error) {
+        // Crear una nueva nota
+        const newNote = new Note({
+            motivo,
+            descripcion,
+            cliente,
+            fechaAgenda,
+            responsable
+        });
+        await newNote.save();
+        res.json({ message: 'Nota creada' });
+    } catch (error) {
         res.status(500).json({ message: error.message });
-        }
+    }
 };
 notesCtrl.getNote = async (req, res) => {
     const note = await Note.findById(req.params.id);
@@ -42,23 +33,29 @@ notesCtrl.getNote = async (req, res) => {
     res.json(note);
 };
 notesCtrl.updateNote = async (req, res) => {
-    console.log("hit notes controller")
-    const { title, content, author } = req.body;
-    if (!title || title.trim() === '') {
-        console.log('No tiene titulo');
-        return res.status(400).json({ message: 'El titulo no puede estar vacío' });
+    const { motivo, descripcion, cliente, fechaAgenda, responsable } = req.body;
+    try {
+        // Verificar si la nota existe
+        const existingNote = await Note.findById(req.params.id);
+        if (!existingNote) {
+            return res.status(404).json({ message: 'La nota no existe' });
+        }
+
+        // Actualizar la nota
+        await Note.findByIdAndUpdate(req.params.id, {
+            motivo,
+            descripcion,
+            cliente,
+            fechaAgenda,
+            responsable
+        });
+
+        res.json({ message: 'Nota actualizada' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-    if (!content|| content.trim() === '') {
-        console.log('No tiene contenido');
-        return res.status(400).json({ message: 'La nota no puede estar vacía' });
-    }
-    await Note.findOneAndUpdate({_id: req.params.id}, {
-        title,
-        content
-    });
-    console.log(req.params.id, req.body);
-    res.json({message: 'Note Updated'});
 };
+
 notesCtrl.deleteNote = async (req, res) => {
     await Note.findByIdAndDelete(req.params.id);
     res.json({message: 'Note Deleted'})
