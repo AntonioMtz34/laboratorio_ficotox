@@ -17,7 +17,7 @@
     "express": "^4.19.2",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.3.4",
+    "mongoose": "^8.10.1",
     "xmldom": "^0.6.0"
   },
   "devDependencies": {

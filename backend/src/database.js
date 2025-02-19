@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 
 // Utiliza la variable de entorno MONGODB_URI o la URI predeterminada
-const URI = process.env.MONGODB_URI || 'mongodb://localhost/ficotox';
+//MONGODB_URI=mongodb://localhost/ficotox;
+//const URI = process.env.MONGODB_URI || 'mongodb://localhost/ficotox';
+const URI = 'mongodb+srv://sebastianmartinez48:Clr0xgqzM0ePV218@laboratorioficotox.5gnsk.mongodb.net/ficotox?retryWrites=true&w=majority&appName=LaboratorioFicotox';
 
 // Conectar a la base de datos
 mongoose.connect(URI, {
