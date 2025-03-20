@@ -3,28 +3,31 @@ const Lote = require('../models/Lote');
 const Muestra = require('../models/Muestra');
 const Cliente = require('../models/Cliente'); 
 
-// Registra un nuevo lote y lo asocia a un cliente y una muestra
 lotesCtrl.registrarLote = async (req, res) => {
-    const { muestraId, Comentario, clienteId } = req.body; // Extrae los datos enviados en el cuerpo de la solicitud
+    const { muestraId, Nombre, clienteId } = req.body;
 
     try {
-        // Busca la muestra asociada al ID
         const muestra = await Muestra.findById(muestraId);
         if (!muestra) {
             return res.status(404).json({ message: 'Muestra no encontrada' });
         }
 
-        // Busca el cliente asociado al ID
         const cliente = await Cliente.findById(clienteId);
         if (!cliente) {
             return res.status(404).json({ message: 'Cliente no encontrado' }); 
         }
 
-        // Crea un nuevo lote con la muestra y el cliente especificados
+        // Extraer y modificar los identificadores de análisis, pero ahora guardando los objetos completos
+        const analisisLote = muestra.Analisis.map(analisis => ({
+            ...analisis.toObject(), // Copiar el objeto completo
+            _id: analisis._id.slice(0, -2) // Eliminar los últimos dos caracteres del ID
+        }));
+
         const nuevoLote = new Lote({
-            muestras: [muestra._id], // Inicializa el array con la muestra proporcionada
-            Comentario: Comentario,
-            cliente: cliente._id // Asocia el lote con el cliente
+            muestras: [muestra._id],
+            Analisis: analisisLote, // Guardamos los análisis completos en el lote
+            nombre: Nombre,
+            cliente: cliente._id
         });
 
         await nuevoLote.save();
@@ -33,6 +36,8 @@ lotesCtrl.registrarLote = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+
 
 // Obtiene la lista de todos los lotes almacenados en la base de datos
 lotesCtrl.getLotes = async (req, res) => {
@@ -88,6 +93,26 @@ lotesCtrl.agregarMuestra = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+lotesCtrl.getCantidadMuestras = async (req, res) => {
+    try {
+        const lote = await Lote.findById(req.params.id).select('muestras Analisis');
+
+        if (!lote) {
+            return res.status(404).json({ message: 'Lote no encontrado' });
+        }
+
+        res.json({ 
+            cantidadMuestras: lote.muestras.length,
+            analisis: lote.Analisis 
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+
 
 // Elimina una muestra específica de un lote
 lotesCtrl.eliminarMuestra = async (req, res) => {

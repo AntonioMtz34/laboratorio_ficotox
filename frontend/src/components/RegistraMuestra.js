@@ -3,7 +3,7 @@ import axios from 'axios';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from './UserContext';
-import { generateLabelXml } from './labelGenerator1';
+import { generateLabelXml } from './labelGenerator2';//cambio de impresora 
 const RegistraMuestra = () => {
     const [isSubmitting, setIsSubmitting] = useState(false); // Previene subir multiples solicitudes de mueestras y generar errores con los contadores.
     const [dataLoaded, setDataLoaded] = useState(false); // verifica que no hayan multiples instancias de el useffect donde se reinicie el valor del tipo de muestra  
@@ -13,6 +13,7 @@ const RegistraMuestra = () => {
     const [selectedLote, setSelectedLote] = useState(null);
     const [lotes, setLotes] = useState([]); //Almacena los lotes de la base de datos
     const [loteRegistrado, setLoteRegistrado] = useState('');
+    const [NombreLote, setNombreLote] = useState('');
     // Manejan la funcionalidad de los clientes
     const [clienteSelected, setClienteSelected] = useState('');
     const [clientes, setClientes] = useState([]); // Almancena los clientes que se tienen registados
@@ -24,7 +25,7 @@ const RegistraMuestra = () => {
     const [Peso, setPeso] = useState('');
     const [ToRecepcion, setToRecepcion] = useState('');
     const { sampleType } = useContext(UserContext);
-  
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -67,7 +68,7 @@ const RegistraMuestra = () => {
             return {};
         }
     };
-    
+
     // Genera los objetos analisis junto con su respectivo contador
     const generateAnalisisIds = (analisis, contadores) => {
         return analisis.map(analisisItem => {
@@ -78,11 +79,48 @@ const RegistraMuestra = () => {
             return { ...analisisItem, _id: newId };
         });
     };
+
+    const getLetterFromIndex = (index) => {
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        return alphabet[index] || "Z"; // Si el índice supera 25, usa "Z"
+    };
+
+    const actualizarUltimoAnalisis = async (selectedLote) => {
+        try {
+            const res = await axios.get(`http://localhost:4000/api/lotes/${selectedLote._id}/cantidadMuestras`);
+            const { cantidadMuestras, analisis } = res.data;
+    
+            const letra = getLetterFromIndex(cantidadMuestras);
+    
+            if (!Array.isArray(analisis) || analisis.length === 0) {
+                console.error("Error: No hay análisis registrados en el lote.");
+                return [];
+            }
+    
+            // Mantener la estructura del objeto en la actualización
+            const nuevoAnalisis = analisis.map(analisisItem => ({
+                ...analisisItem,
+                _id: `${analisisItem._id}-${letra}` // Conservar el objeto y solo modificar el _id
+            }));
+    
+            return nuevoAnalisis;
+        } catch (error) {
+            console.error("Error al actualizar análisis:", error);
+            return [];
+        }
+    };
+    
+    
+    
+
+
+
+
     const onSubmit = async (e) => {
         e.preventDefault();
 
         if (isSubmitting) return; // Previene múltiples llamadas
-        
+
         //Verifica que las entradas sean válidas
         if (!NombreOrganismo || !/^[A-Za-záéíóúüñ\s]+$/.test(NombreOrganismo)) {
             alert('Por favor, ingresa un nombre de organismo válido (solo letras y espacios).');
@@ -103,9 +141,28 @@ const RegistraMuestra = () => {
 
         setIsSubmitting(true);
         const contadores = await fetchContadores();
+        let updatedAnalisis;
+       
+        if (lote) {
+            if (loteRegistrado === "si") {
+                // Genera los IDs para cada análisis
+                updatedAnalisis = await actualizarUltimoAnalisis(selectedLote, updatedAnalisis);   
+            }
+            else {
+                // Genera el ID con notacion de lote
+                updatedAnalisis = generateAnalisisIds(analisis, contadores);
+                updatedAnalisis = updatedAnalisis.map(analisisItem => ({
+                    ...analisisItem,
+                    _id: `${analisisItem._id}-A`
+                }));
+            }
+        } else {
+           
+            // Genera los IDs para cada análisis
+            updatedAnalisis = generateAnalisisIds(analisis, contadores);
+            console.log(updatedAnalisis);
+        }
 
-        // Genera los IDs para cada análisis
-        const updatedAnalisis = generateAnalisisIds(analisis, contadores);
 
         // Genera el objeto Muestra
         const newMuestra = {
@@ -131,14 +188,10 @@ const RegistraMuestra = () => {
             if (response.data && response.data.message === 'Muestra guardada') {
                 const muestraId = response.data.muestra._id; // ID de la muestra creada
                 console.log('Muestra registrada correctamente');
-                // Incrementa el contador
-                for (const analysis of newMuestra.Analisis) {
-                    await axios.post(`http://localhost:4000/api/contador/${analysis.Type}`);
 
-                }
                 // Asocia la muestra a un lote en caso de estar contemplado
-                if(lote){
-                    if(selectedLote){
+                if (lote) {
+                    if (selectedLote) {
                         // Guarda la muestra en el lote seleccionado
                         const loteResponse = await axios.post(`http://localhost:4000/api/lotes/${selectedLote._id}/muestra/${muestraId}`);
                         if (loteResponse.data && loteResponse.data.message === 'Muestra agregada al lote') {
@@ -147,19 +200,33 @@ const RegistraMuestra = () => {
                             throw new Error('Error asociando muestra al lote');
                         }
                     }
-                    else{
+
+                    else {
+                       
                         const newLote = {
                             muestraId: muestraId,
                             clienteId: clienteSelected,
-                            Comentario: "que tenemos aqui",
+                            Nombre: NombreLote,
                         };
                         // Crea un nuevo lote
-                        const loteResponse = await axios.post(`http://localhost:4000/api/lotes`, newLote); 
+                        const loteResponse = await axios.post(`http://localhost:4000/api/lotes`, newLote);
                         if (loteResponse.data && loteResponse.data.message === 'Lote registrado exitosamente') {
                             console.log('Muestra asociada correctamente al lote');
                         } else {
                             throw new Error('Error asociando muestra al lote');
                         }
+                        // Incrementa el contador
+                        for (const analysis of newMuestra.Analisis) {
+                            await axios.post(`http://localhost:4000/api/contador/${analysis.Type}`);
+    
+                        }
+                    }
+                }
+                else {
+                    // Incrementa el contador
+                    for (const analysis of newMuestra.Analisis) {
+                        await axios.post(`http://localhost:4000/api/contador/${analysis.Type}`);
+
                     }
                 }
                 for (const analysis of newMuestra.Analisis) {
@@ -203,12 +270,14 @@ const RegistraMuestra = () => {
                 SetNombreorganismo(e.target.value);
                 break;
             case 'clienteSelected':
-                setSelectedLote(""); 
+                setSelectedLote("");
                 setClienteSelected(e.target.value);
                 break;
             case 'loteRegistrado':
                 setLoteRegistrado(e.target.value);
                 break;
+            case 'NombreLote':
+                setNombreLote(e.target.value);
             default:
                 break;
         }
@@ -300,7 +369,8 @@ const RegistraMuestra = () => {
                                 </div>
                             </div>
                         )}
-                        {lote && loteRegistrado === 'no' && (
+                        { loteRegistrado === 'no' && lote && (
+
                             <div style={{
                                 marginTop: '10px',
                                 padding: '15px',
@@ -312,37 +382,47 @@ const RegistraMuestra = () => {
                                 fontWeight: 'bold',
                                 fontSize: '16px'
                             }}>
-                                ¡Un nuevo lote se creará automáticamente para este cliente!
+                                <div className="form-group">
+                                    <label><b>Nombre del Lote:</b></label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="NombreLote"
+                                        value={NombreLote}
+                                        onChange={onInputChange}
+                                    />
+                                </div>
+                                ¡Un nuevo lote se creará para este cliente!
                             </div>
                         )}
 
-{lote && loteRegistrado  === 'si' && (
-    // Muestra los lotes registrados acorde al cliente
-    <div>
-        <div className="form-group">
-            <label><b>Seleccionar Lote:</b></label>
-            <select
-                className="form-control"
-                name="loteSelected"
-                onChange={handleLoteSelect} 
-                value={selectedLote ? selectedLote._id : ''}
-            >
-                <option value="">Seleccione un lote</option>
-                {lotes.filter(lote => lote.cliente._id === clienteSelected).length > 0 ? (
-                    lotes.filter(lote => lote.cliente._id === clienteSelected).map(lote => (
-                        <option key={lote._id} value={lote._id}>
-                            {lote._id} - {new Date(lote.createdAt).toLocaleDateString()}
-                        </option>
-                    ))
-                ) : (
-                    <option value="">No hay lotes asociados para el cliente seleccionado</option>
-                )}
-            </select>
-        </div>
+                        {lote && loteRegistrado === 'si' && (
+                            // Muestra los lotes registrados acorde al cliente
+                            <div>
+                                <div className="form-group">
+                                    <label><b>Seleccionar Lote:</b></label>
+                                    <select
+                                        className="form-control"
+                                        name="loteSelected"
+                                        onChange={handleLoteSelect}
+                                        value={selectedLote ? selectedLote._id : ''}
+                                    >
+                                        <option value="">Seleccione un lote</option>
+                                        {lotes.filter(lote => lote.cliente._id === clienteSelected).length > 0 ? (
+                                            lotes.filter(lote => lote.cliente._id === clienteSelected).map(lote => (
+                                                <option key={lote._id} value={lote._id}>
+                                                    {lote.nombre} - {new Date(lote.createdAt).toLocaleDateString()}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option value="">No hay lotes asociados para el cliente seleccionado</option>
+                                        )}
+                                    </select>
+                                </div>
 
-     
-    </div>
-)}
+
+                            </div>
+                        )}
                     </div>
                     {sampleType === 'agua' ? (
                         <div className="form-group" style={{ marginBottom: '20px' }}>
@@ -478,7 +558,7 @@ const RegistraMuestra = () => {
                         </div>
                     )}
                     <div className="form-group">
-                        <label><b>Contenido:</b></label>
+                        <label><b>Observaciones:</b></label>
                         <textarea
                             className="form-control"
                             placeholder="Comentarios"

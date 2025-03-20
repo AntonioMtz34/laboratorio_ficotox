@@ -7,6 +7,7 @@ const {
     eliminarLote,
     agregarMuestra,
     eliminarMuestra,
+    getCantidadMuestras,
 } = require('../controllers/lote.controller');
 
 // Rutas para lotes
@@ -16,11 +17,15 @@ router.route('/')
 
 router.route('/:id')
     .get(getLote)           // Obtiene un lote en especifico
+
     .delete(eliminarLote);   // Elimina un lote en especifico
     
 
 router.route('/:id/muestra/:muestraId')
     .post(agregarMuestra)    // Agrega un muestra a un lote
     .delete(eliminarMuestra); // Elimina una muestra de un lote
+
+router.route('/:id/cantidadMuestras')
+    .get(getCantidadMuestras);
 
 module.exports = router;

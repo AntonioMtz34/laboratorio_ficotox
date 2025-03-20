@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { UserContext } from './UserContext';
+import { Link } from "react-router-dom";
 
 const Lotes = () => {
     const [lotes, setLotes] = useState([]); // Almacena el arreglo de lotes
@@ -60,7 +61,7 @@ const Lotes = () => {
             );
 
             return isDateInRange && (
-                lote.Comentario?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                lote.nombre?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 lote._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 lote.cliente.nombreCliente?.toLowerCase().includes(searchQuery.toLowerCase())
             );
@@ -131,7 +132,7 @@ const Lotes = () => {
                 <table className="table table-striped table-bordered">
                     <thead className="table-light">
                         <tr>
-                            <th>Comentario</th>
+                            <th>NombredelLote</th>
                             <th>ID</th>
                             <th>Fecha de Registro</th>
                             <th>Cliente</th>
@@ -142,19 +143,19 @@ const Lotes = () => {
                     <tbody>
                         {sortedLotes.map(lote => (
                             <tr key={lote._id}>
-                                <td>{lote.Comentario}</td>
+                                <td>{lote.nombre}</td>
                                 <td>{lote._id}</td>
                                 <td>{format(new Date(lote.createdAt), 'dd/MM/yyyy')}</td>
                                 <td>{lote.cliente?.nombreCliente || 'N/A'}</td>
                                 <td>
-                                    <ul className="list-unstyled mb-0">
-                                        {lote.muestras.map((muestra, index) => (
-                                            <li key={index}>
-                                                <a href={`/Muestra/${muestra._id}/edit`}>{muestra._id}</a>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </td>
+    <ul className="list-unstyled mb-0">
+        {lote.muestras.map((muestra, index) => (
+            <li key={index}>
+                <Link to={`/Muestra/${muestra._id}/edit`}>{muestra._id}</Link>
+            </li>
+        ))}
+    </ul>
+</td>
                                 {user.rol === 'Administrador' && (
                                     <td>
                                         <button

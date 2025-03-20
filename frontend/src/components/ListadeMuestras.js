@@ -46,18 +46,8 @@ const ListadeMuestras = () => {
         setMuestras(res.data);
     };
 
-    // Maneja la eliminación de una muestra después de la confirmación del usuario
-    const handleDelete = async (muestraId) => {
-        const confirmDelete = window.confirm("¿Estás seguro de que quieres eliminar esta muestra?");
-        if (confirmDelete) {
-            try {
-                await axios.delete(`http://localhost:4000/api/muestras/${muestraId}`);
-                getMuestras(); // Recarga la lista después de la eliminación
-            } catch (error) {
-                console.error("Error al eliminar la muestra:", error);
-            }
-        }
-    };
+
+   
 
     // Actualiza el estado de búsqueda con el valor ingresado por el usuario
     const handleSearchChange = (e) => {
@@ -160,9 +150,6 @@ const ListadeMuestras = () => {
                             <th>Fecha de Elaboración</th>
                             <th>Cliente</th>
                             <th>Análisis</th>
-                            {user.rol === 'Administrador' && (
-                                <th>Acciones</th>
-                            )}
                         </tr>
                     </thead>
                     <tbody>
@@ -197,16 +184,6 @@ const ListadeMuestras = () => {
                                         ))}
                                     </ul>
                                 </td>
-                                {user.rol === 'Administrador' && (
-                                    <td>
-                                        <button
-                                            className="btn btn-danger btn-sm"
-                                            onClick={() => handleDelete(muestra._id)}
-                                        >
-                                            Eliminar
-                                        </button>
-                                    </td>
-                                )}
                             </tr>
                         ))}
                     </tbody>

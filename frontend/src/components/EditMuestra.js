@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useParams, useNavigate } from 'react-router-dom';
-import { generateLabelXml } from './labelGenerator1';
+import { generateLabelXml } from './labelGenerator2';
 
 const EditMuestra = () => {
     // Estados para manejar los datos del formulario, incluyendo detalles de la muestra, cliente y análisis
@@ -29,7 +29,6 @@ const EditMuestra = () => {
             if (id) {
                 const muestraRes = await axios.get(`http://localhost:4000/api/muestras/${id}`);
                 const muestraData = muestraRes.data;
-                console.log(muestraData);
                 setComentario(muestraData.Comentario);
                 setDate(new Date(muestraData.date));
                 setToRecepcion(muestraData.ToRecepcion);
@@ -182,71 +181,60 @@ const EditMuestra = () => {
                             </div>
                         </div>
 
-                        <div className="form-group mb-3">
-                            {/* Campo para actualizar el estado de la muestra */}
-                            <label><strong>Análisis Solicitados</strong></label>
-                            <div className="form-control-plaintext bg-light border rounded py-2 px-3">
-                                {Analisis.map((item, index) => {
-                                    let bgColor;
-                                    switch (item.Estado) {
-                                        case 'positivo':
-                                            bgColor = 'rgba(255, 0, 0, 0.5)'; // Rojo con transparencia
-                                            break;
-                                        case 'negativo':
-                                            bgColor = 'rgba(0, 128, 0, 0.5)'; // Verde con transparencia
-                                            break;
-                                        case 'pendiente':
-                                            bgColor = 'rgba(128, 128, 128, 0.5)'; // Gris con transparencia
-                                            break;
-                                        case 'procesado':
-                                            bgColor = 'rgba(255, 165, 0, 0.5)'; // Amarillo con transparencia
-                                            break;
-                                        default:
-                                            bgColor = '#fff'; // Default background color
-                                    }
+                        <div className="container">
+    <div className="row">
+        <label><strong>Análisis Solicitados</strong></label>
+        {Analisis.map((item, index) => {
+            let bgColor;
+            switch (item.Estado) {
+                case 'positivo': bgColor = 'rgba(255, 0, 0, 0.5)'; break;
+                case 'negativo': bgColor = 'rgba(0, 128, 0, 0.5)'; break;
+                case 'pendiente': bgColor = 'rgba(128, 128, 128, 0.5)'; break;
+                case 'procesado': bgColor = 'rgba(255, 165, 0, 0.5)'; break;
+                default: bgColor = '#fff';
+            }
 
-                                    return (
-                                        <div
-                                            key={index}
-                                            className="p-3 mb-3 border rounded"
-                                            style={{
-                                                marginBottom: '1.5rem',
-                                                border: '1px solid #ddd',
-                                                backgroundColor: bgColor
-                                            }}
-                                        >
-                                            <strong>Tipo:</strong> {item.Type} <br />
-                                            <strong>ID:</strong> {item._id} <br />
-                                            <strong>Método:</strong> {item.Metodo} <br />
-                                            <strong>Estado:</strong>
-                                            <select
-                                                className="form-select mt-2"
-                                                value={item.Estado}
-                                                onChange={(e) => {
-                                                    const newAnalisis = [...Analisis];
-                                                    newAnalisis[index].Estado = e.target.value;
-                                                    setAnalisis(newAnalisis);
-                                                }}
-                                            >
-                                                <option value="pendiente">Pendiente</option>
-                                                <option value="procesado">Procesado</option>
-                                                <option value="positivo">Positivo</option>
-                                                <option value="negativo">Negativo</option>
-                                            </select>
-                                            <button
-                                                onClick={() => printLabel(item._id)}  // Pass the id when calling printLabel
-                                                className="btn btn-secondary"
-                                            >
-                                                Imprimir Etiqueta
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
+            return (
+                <div key={index} className="col-md-4 col-sm-12 mb-3">
+                    <div className="p-3 border rounded" style={{ backgroundColor: bgColor }}>
+                        <p><strong>Tipo:</strong> {item.Type}</p>
+                        <p><strong>ID:</strong> {item._id}</p>
+
+                        <label><strong>Estado:</strong></label>
+                        <select
+                            className="form-select mt-2"
+                            value={item.Estado}
+                            onChange={(e) => {
+                                const newAnalisis = [...Analisis];
+                                newAnalisis[index].Estado = e.target.value;
+                                setAnalisis(newAnalisis);
+                            }}
+                        >
+                            <option value="pendiente">Pendiente</option>
+                            <option value="procesado">Procesado</option>
+                            <option value="positivo">Positivo</option>
+                            <option value="negativo">Negativo</option>
+                        </select>
+
+                        <button
+                            onClick={() => printLabel(item._id)}
+                            className="btn btn-secondary mt-2 w-100"
+                        >
+                            Imprimir Etiqueta
+                        </button>
+                    </div>
+                </div>
+            );
+        })}
+    </div>
+
+</div>
+
+     
+
 
                         <div className="form-group">
-                            <label><b>Contenido:</b></label>
+                            <label><b>Observaciones:</b></label>
                             <textarea
                                 className="form-control"
                                 placeholder="Comentarios"
